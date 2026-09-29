@@ -3,70 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusLofi Player</title>
+    <title>Harmony - Music Player</title>
     <style>
-        :root { --bg: #f8fafc; --text: #1e293b; --card: #ffffff; --primary: #3b82f6; --shadow: rgba(0,0,0,0.05); }
-        body.dark { --bg: #0f172a; --text: #f8fafc; --card: #1e293b; --primary: #60a5fa; --shadow: rgba(0,0,0,0.3); }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 1.5rem; transition: background 0.3s, color 0.3s; }
-        .container { max-width: 600px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        h1 { font-size: 1.5rem; margin: 0; }
-        button { background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500; }
-        button:hover { opacity: 0.9; }
-        .track-card { background: var(--card); padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; box-shadow: 0 4px 6px var(--shadow); display: flex; justify-content: space-between; align-items: center; }
-        .player-box { background: var(--card); padding: 1rem; border-radius: 12px; margin-top: 1.5rem; box-shadow: 0 4px 6px var(--shadow); text-align: center; }
-        audio { width: 100%; margin-top: 0.5rem; }
+        :root { --bg: #121212; --card-bg: #181818; --hover-bg: #282828; --green: #1db954; --text: #ffffff; --text-muted: #b3b3b3; }
+        body.light { --bg: #ffffff; --card-bg: #f5f5f5; --hover-bg: #e0e0e0; --green: #1ed760; --text: #191414; --text-muted: #535353; }
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; display: grid; grid-template-rows: 1fr 90px; height: 100vh; overflow: hidden; transition: background 0.3s; }
+        .main-layout { display: flex; height: calc(100vh - 90px); overflow: hidden; }
+        
+        /* Sidebar */
+        aside { width: 240px; background: #000000; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+        aside h2 { color: var(--green); margin: 0; font-size: 1.5rem; }
+        aside button { background: none; border: none; color: var(--text-muted); text-align: left; font-size: 1rem; cursor: pointer; padding: 8px 0; font-weight: 600; }
+        aside button:hover { color: var(--text); }
+
+        /* Content Area */
+        .content { flex: 1; padding: 24px; overflow-y: auto; background: var(--bg); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .search-bar { width: 100%; max-width: 400px; padding: 12px 20px; border-radius: 500px; border: none; background: var(--card-bg); color: var(--text); font-size: 0.95rem; outline: none; }
+        
+        /* Track Grid */
+        .track-list { display: flex; flex-direction: column; gap: 8px; }
+        .track-row { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 12px 16px; border-radius: 6px; transition: background 0.2s; }
+        .track-row:hover { background: var(--hover-bg); }
+        .track-info { display: flex; flex-direction: column; }
+        .track-title { font-weight: 600; font-size: 0.95rem; }
+        .track-artist { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+        .play-btn { background: var(--green); color: #000; border: none; padding: 8px 16px; border-radius: 500px; font-weight: bold; cursor: pointer; }
+        .play-btn:hover { transform: scale(1.05); }
+
+        /* Bottom Player Bar */
+        footer { background: #181818; border-top: 1px.solid #282828; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        .player-left { display: flex; flex-direction: column; width: 30%; }
+        .player-center { display: flex; flex-direction: column; align-items: center; width: 40%; gap: 6px; }
+        .player-controls { display: flex; gap: 15px; align-items: center; }
+        .player-controls button { background: none; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; }
+        audio { width: 100%; height: 35px; }
+
+        /* Settings Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; }
+        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; width: 300px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-content h3 { margin: 0; }
+        .close-modal { background: var(--green); color: #000; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎧 CampusLofi</h1>
-            <button onclick="document.body.classList.toggle('dark')">Theme</button>
-        </header>
+    <div class="main-layout">
+        <aside>
+            <h2>🎵 Harmony</h2>
+            <button onclick="fetchTracks('')">🏠 Home / Curated</button>
+            <button onclick="openSettings()">⚙️ Settings</button>
+        </aside>
         
-        <div id="playlist">Loading study beats...</div>
+        <div class="content">
+            <div class="top-bar">
+                <input type="search5" id="searchInput" class="search-bar" placeholder="Search any song, artist, or vibe..." oninput="handleSearch(this.value)">
+            </div>
+            <div id="playlistContainer" class="track-list">Loading music library...</div>
+        </div>
+    </div>
 
-        <div class="player-box">
-            <div id="now-playing">Select a track to start studying</div>
+    <footer>
+        <div class="player-left">
+            <span id="nowPlayingTitle" style="font-weight:600; font-size:0.9rem;">Select a track</span>
+            <span id="nowPlayingArtist" style="color:var(--text-muted); font-size:0.75rem;">Harmony Player</span>
+        </div>
+        <div class="player-center">
             <audio id="audioPlayer" controls></audio>
+        </div>
+        <div style="width: 30%;"></div>
+    </footer>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3>Settings</h3>
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+                Light Mode
+                <input type="checkbox" onclick="document.body.classList.toggle('light')">
+            </label>
+            <button class="close-modal" onclick="closeSettings()">Close</button>
         </div>
     </div>
 
     <script>
-        // Replace with your actual deployed backend URL (e.g., Render) or public audio array
-        const API_URL = '/api/tracks';
+        let searchTimeout;
 
-        // Fallback mock tracks if backend is offline
-        const fallbackTracks = [
-            { id: 1, title: 'Midnight Lofi Study', artist: 'CampusLofi Beats', url: 'https://archive.org/download/testmp3testfile/test_64kb.mp3' },
-            { id: 2, title: 'Ambient Library Focus', artist: 'StudySound Archive', url: 'https://archive.org/download/testmp3testfile/test_64kb.mp3' }
-        ];
+        function fetchTracks(query = '') {
+            const container = document.getElementById('playlistContainer');
+            container.innerHTML = '<div style="color:var(--text-muted)">Searching archives...</div>';
 
-        function loadTracks(tracks) {
-            const container = document.getElementById('playlist');
-            container.innerHTML = tracks.map(t => `
-                <div class="track-card">
-                    <div>
-                        <strong>${t.title}</strong><br><small style="opacity: 0.7;">${t.artist}</small>
-                    </div>
-                    <button onclick="playTrack('${t.url}', '${t.title} - ${t.artist}')">Play</button>
-                </div>
-            `).join('');
+            fetch(`/api/tracks?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(tracks => {
+                    container.innerHTML = tracks.map(t => `
+                        <div class="track-row">
+                            <div class="track-info">
+                                <span class="track-title">${escapeHtml(t.title)}</span>
+                                <span class="track-artist">${escapeHtml(t.artist)}</span>
+                            </div>
+                            <button class="play-btn" onclick="playTrack('${t.url}', '${escapeHtml(t.title)}', '${escapeHtml(t.artist)}')">Play</button>
+                        </div>
+                    `).join('');
+                })
+                .catch(() => {
+                    container.innerHTML = '<div style="color:red">Failed to load tracks.</div>';
+                });
         }
 
-        function playTrack(url, label) {
+        function handleSearch(query) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                fetchTracks(query);
+            }, 400); // Debounce search request
+        }
+
+        function playTrack(url, title, artist) {
             const player = document.getElementById('audioPlayer');
-            document.getElementById('now-playing').innerText = `Now Playing: ${label}`;
+            document.getElementById('nowPlayingTitle').innerText = title;
+            document.getElementById('nowPlayingArtist').innerText = artist;
             player.src = url;
             player.play();
         }
 
-        // Fetch from backend, fallback gracefully if unavailable
-        fetch(API_URL)
-            .then(res => res.json())
-            .then(data => loadTracks(data))
-            .catch(() => loadTracks(fallbackTracks));
+        function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
+        function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // Load default feed on startup
+        fetchTracks('');
     </script>
 </body>
 </html>
