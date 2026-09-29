@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusLofi Player</title>
+    <style>
+        :root { --bg: #f8fafc; --text: #1e293b; --card: #ffffff; --primary: #3b82f6; --shadow: rgba(0,0,0,0.05); }
+        body.dark { --bg: #0f172a; --text: #f8fafc; --card: #1e293b; --primary: #60a5fa; --shadow: rgba(0,0,0,0.3); }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 1.5rem; transition: background 0.3s, color 0.3s; }
+        .container { max-width: 600px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        h1 { font-size: 1.5rem; margin: 0; }
+        button { background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 500; }
+        button:hover { opacity: 0.9; }
+        .track-card { background: var(--card); padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem; box-shadow: 0 4px 6px var(--shadow); display: flex; justify-content: space-between; align-items: center; }
+        .player-box { background: var(--card); padding: 1rem; border-radius: 12px; margin-top: 1.5rem; box-shadow: 0 4px 6px var(--shadow); text-align: center; }
+        audio { width: 100%; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎧 CampusLofi</h1>
+            <button onclick="document.body.classList.toggle('dark')">Theme</button>
+        </header>
+        
+        <div id="playlist">Loading study beats...</div>
+
+        <div class="player-box">
+            <div id="now-playing">Select a track to start studying</div>
+            <audio id="audioPlayer" controls></audio>
+        </div>
+    </div>
+
+    <script>
+        // Replace with your actual deployed backend URL (e.g., Render) or public audio array
+        const API_URL = 'https://your-backend-service.onrender.com/api/tracks';
+
+        // Fallback mock tracks if backend is offline
+        const fallbackTracks = [
+            { id: 1, title: 'Midnight Lofi Study', artist: 'CampusLofi Beats', url: 'https://archive.org/download/testmp3testfile/test_64kb.mp3' },
+            { id: 2, title: 'Ambient Library Focus', artist: 'StudySound Archive', url: 'https://archive.org/download/testmp3testfile/test_64kb.mp3' }
+        ];
+
+        function loadTracks(tracks) {
+            const container = document.getElementById('playlist');
+            container.innerHTML = tracks.map(t => `
+                <div class="track-card">
+                    <div>
+                        <strong>${t.title}</strong><br><small style="opacity: 0.7;">${t.artist}</small>
+                    </div>
+                    <button onclick="playTrack('${t.url}', '${t.title} - ${t.artist}')">Play</button>
+                </div>
+            `).join('');
+        }
+
+        function playTrack(url, label) {
+            const player = document.getElementById('audioPlayer');
+            document.getElementById('now-playing').innerText = `Now Playing: ${label}`;
+            player.src = url;
+            player.play();
+        }
+
+        // Fetch from backend, fallback gracefully if unavailable
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => loadTracks(data))
+            .catch(() => loadTracks(fallbackTracks));
+    </script>
+</body>
+</html>
